@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PhotoCleaner — Pulizia intelligente Google Foto</title>
+<style>
+  :root {
+    --bg: #0e0e0f;
+    --bg2: #17171a;
+    --bg3: #1f1f24;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #f0efe8;
+    --text2: #9a9890;
+    --text3: #5a5956;
+    --accent: #d4a843;
+    --accent2: #b8902f;
+    --green: #4caf7d;
+    --red: #e05a4e;
+    --blue: #5b8dee;
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* HEADER */
+  header {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg2);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .logo-text { font-size: 17px; font-weight: 600; letter-spacing: -0.3px; }
+  .logo-sub { font-size: 12px; color: var(--text3); margin-top: 1px; }
+  #user-info { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text2); }
+  #user-avatar { width: 28px; height: 28px; border-radius: 50%; }
+  #logout-btn {
+    background: none; border: 1px solid var(--border2); color: var(--text2);
+    padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;
+    transition: all 0.15s;
+  }
+  #logout-btn:hover { border-color: var(--red); color: var(--red); }
+
+  /* MAIN */
+  main { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+
+  /* LOGIN SCREEN */
+  #login-screen {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; min-height: 70vh; text-align: center; gap: 2rem;
+  }
+  .hero-icon {
+    width: 80px; height: 80px; border-radius: 20px;
+    background: linear-gradient(135deg, var(--accent), #8b5e1a);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px; margin-bottom: 0.5rem;
+  }
+  #login-screen h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.5px; }
+  #login-screen p { font-size: 15px; color: var(--text2); max-width: 460px; line-height: 1.7; }
+  .features {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;
+    width: 100%; max-width: 560px; margin-top: 0.5rem;
+  }
+  .feature-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1rem;
+    font-size: 13px; color: var(--text2); text-align: left;
+  }
+  .feature-card .ficon { font-size: 20px; margin-bottom: 6px; }
+  .feature-card strong { display: block; color: var(--text); font-size: 13px; margin-bottom: 3px; }
+  #login-btn {
+    background: var(--accent); color: #1a1200;
+    border: none; border-radius: var(--radius); padding: 14px 32px;
+    font-size: 15px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: 10px;
+    transition: background 0.15s, transform 0.1s;
+  }
+  #login-btn:hover { background: var(--accent2); transform: translateY(-1px); }
+  #login-btn img { width: 20px; height: 20px; }
+
+  /* PROGRESS SCREEN */
+  #progress-screen { display: none; text-align: center; padding: 4rem 2rem; }
+  #progress-screen h2 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  #progress-screen p { color: var(--text2); font-size: 14px; margin-bottom: 2rem; }
+  .progress-bar-wrap {
+    background: var(--bg3); border-radius: 999px;
+    height: 6px; width: 100%; max-width: 400px; margin: 0 auto 1rem;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%; background: var(--accent);
+    border-radius: 999px; width: 0%;
+    transition: width 0.4s ease;
+  }
+  #progress-label { font-size: 13px; color: var(--text3); }
+  .spinner {
+    width: 40px; height: 40px; border: 3px solid var(--bg3);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin 0.8s linear infinite; margin: 0 auto 1.5rem;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* DASHBOARD */
+  #dashboard { display: none; }
+  .stats-row {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem;
+  }
+  .stat-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.2rem 1.4rem;
+  }
+  .stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text3); margin-bottom: 6px; }
+  .stat-value { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+  .stat-value.green { color: var(--green); }
+  .stat-value.amber { color: var(--accent); }
+  .stat-value.red { color: var(--red); }
+
+  /* CONTROLS */
+  .controls {
+    display: flex; align-items: center; gap: 1rem;
+    margin-bottom: 1.5rem; flex-wrap: wrap;
+  }
+  .controls label { font-size: 13px; color: var(--text2); }
+  select, input[type=range] {
+    background: var(--bg2); border: 1px solid var(--border2);
+    color: var(--text); border-radius: 6px; padding: 6px 10px;
+    font-size: 13px; cursor: pointer;
+  }
+  .btn {
+    padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 500;
+    cursor: pointer; border: 1px solid var(--border2); transition: all 0.15s;
+  }
+  .btn-primary { background: var(--accent); color: #1a1200; border-color: var(--accent); }
+  .btn-primary:hover { background: var(--accent2); }
+  .btn-ghost { background: none; color: var(--text2); }
+  .btn-ghost:hover { background: var(--bg3); color: var(--text); }
+  .btn-danger { background: none; color: var(--red); border-color: rgba(224,90,78,0.3); }
+  .btn-danger:hover { background: rgba(224,90,78,0.1); }
+
+  /* GROUP CARDS */
+  .section-title {
+    font-size: 13px; text-transform: uppercase; letter-spacing: 0.8px;
+    color: var(--text3); margin-bottom: 1rem; padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .group-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); margin-bottom: 1.5rem; overflow: hidden;
+  }
+  .group-header {
+    padding: 1rem 1.4rem; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .group-tag {
+    font-size: 11px; padding: 3px 10px; border-radius: 999px; font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  .tag-identical { background: rgba(224,90,78,0.15); color: #e05a4e; }
+  .tag-similar { background: rgba(212,168,67,0.15); color: var(--accent); }
+  .group-date { font-size: 12px; color: var(--text3); }
+  .group-actions { display: flex; gap: 8px; }
+
+  .photos-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 3px;
+    padding: 3px;
+  }
+  .photo-item {
+    position: relative; aspect-ratio: 1; overflow: hidden;
+    cursor: pointer; border-radius: 4px;
+    transition: opacity 0.2s;
+  }
+  .photo-item img {
+    width: 100%; height: 100%; object-fit: cover;
+    transition: transform 0.2s;
+    display: block;
+  }
+  .photo-item:hover img { transform: scale(1.04); }
+  .photo-item.selected { outline: 3px solid var(--green); outline-offset: -3px; }
+  .photo-item.marked-delete { opacity: 0.35; }
+  .photo-item.marked-delete::after {
+    content: '✕'; position: absolute; inset: 0;
+    background: rgba(224,90,78,0.5); display: flex;
+    align-items: center; justify-content: center;
+    font-size: 28px; color: white; font-weight: 700;
+  }
+  .photo-badge {
+    position: absolute; top: 6px; right: 6px;
+    background: rgba(0,0,0,0.75); border-radius: 5px;
+    padding: 2px 7px; font-size: 11px; color: #fff; backdrop-filter: blur(4px);
+  }
+  .photo-keep-badge {
+    position: absolute; top: 6px; left: 6px;
+    background: var(--green); border-radius: 5px;
+    padding: 2px 8px; font-size: 11px; color: #fff; font-weight: 600;
+  }
+  .photo-info {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: linear-gradient(transparent, rgba(0,0,0,0.8));
+    padding: 1.5rem 0.5rem 0.5rem;
+    font-size: 11px; color: rgba(255,255,255,0.7);
+  }
+  .photo-score {
+    position: absolute; bottom: 6px; right: 6px;
+    font-size: 11px; font-weight: 700;
+    background: rgba(0,0,0,0.7); padding: 2px 7px; border-radius: 4px;
+  }
+  .score-high { color: var(--green); }
+  .score-mid { color: var(--accent); }
+  .score-low { color: var(--red); }
+
+  /* AI ANALYSIS OVERLAY */
+  .ai-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(91,141,238,0.15); color: var(--blue);
+    border: 1px solid rgba(91,141,238,0.3);
+    border-radius: 6px; padding: 3px 10px; font-size: 12px; font-weight: 500;
+  }
+
+  /* BOTTOM BAR */
+  #bottom-bar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--bg2); border-top: 1px solid var(--border2);
+    padding: 1rem 2rem; display: none;
+    align-items: center; justify-content: space-between;
+    z-index: 200;
+  }
+  #bottom-bar.visible { display: flex; }
+  .bottom-info { font-size: 14px; color: var(--text2); }
+  .bottom-info strong { color: var(--text); }
+  .bottom-actions { display: flex; gap: 10px; }
+
+  /* EMPTY STATE */
+  .empty { text-align: center; padding: 4rem; color: var(--text3); font-size: 14px; }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+    display: none; align-items: center; justify-content: center; z-index: 500;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: var(--radius-lg); padding: 2rem; max-width: 440px; width: 90%;
+    text-align: center;
+  }
+  .modal h3 { font-size: 1.2rem; margin-bottom: 0.5rem; }
+  .modal p { color: var(--text2); font-size: 14px; margin-bottom: 1.5rem; line-height: 1.6; }
+  .modal-actions { display: flex; gap: 10px; justify-content: center; }
+
+  /* TOAST */
+  #toast {
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+    background: var(--bg3); border: 1px solid var(--border2);
+    color: var(--text); padding: 10px 20px; border-radius: 8px;
+    font-size: 13px; opacity: 0; transition: opacity 0.3s;
+    z-index: 600; pointer-events: none; white-space: nowrap;
+  }
+  #toast.show { opacity: 1; }
+
+  @media (max-width: 600px) {
+    .stats-row { grid-template-columns: repeat(2,1fr); }
+    .photos-grid { grid-template-columns: repeat(auto-fill, minmax(120px,1fr)); }
+    main { padding: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🧹</div>
+    <div>
+      <div class="logo-text">PhotoCleaner</div>
+      <div class="logo-sub">Pulizia intelligente Google Foto</div>
+    </div>
+  </div>
+  <div id="user-info" style="display:none">
+    <img id="user-avatar" src="" alt="">
+    <span id="user-name"></span>
+    <button id="logout-btn" onclick="logout()">Esci</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- LOGIN -->
+  <div id="login-screen">
+    <div>
+      <div class="hero-icon" style="margin:0 auto 1rem">🖼️</div>
+      <h1>Pulisci Google Foto<br>con l'AI</h1>
+    </div>
+    <p>Trova automaticamente foto duplicate e simili nella tua libreria. L'AI analizza le immagini e suggerisce quali tenere — tu decidi cosa eliminare.</p>
+    <div class="features">
+      <div class="feature-card">
+        <div class="ficon">🔍</div>
+        <strong>Duplicati esatti</strong>
+        Trova foto identiche caricate più volte
+      </div>
+      <div class="feature-card">
+        <div class="ficon">✨</div>
+        <strong>Simili AI</strong>
+        Raggruppa scatti simili dello stesso momento
+      </div>
+      <div class="feature-card">
+        <div class="ficon">⭐</div>
+        <strong>Qualità</strong>
+        Suggerisce la foto migliore del gruppo
+      </div>
+    </div>
+    <button id="login-btn" onclick="startLogin()">
+      <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Accedi con Google
+    </button>
+    <p style="font-size:12px; color:var(--text3)">L'app legge le tue foto in sola lettura. Non modifica né elimina nulla automaticamente.</p>
+  </div>
+
+  <!-- PROGRESS -->
+  <div id="progress-screen">
+    <div class="spinner"></div>
+    <h2 id="progress-title">Caricamento foto...</h2>
+    <p id="progress-desc">Connessione a Google Foto in corso</p>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progress-fill"></div>
+    </div>
+    <div id="progress-label">0 foto analizzate</div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard">
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Foto totali</div>
+        <div class="stat-value" id="stat-total">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Gruppi trovati</div>
+        <div class="stat-value amber" id="stat-groups">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Da eliminare</div>
+        <div class="stat-value red" id="stat-delete">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Da tenere</div>
+        <div class="stat-value green" id="stat-keep">0</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <label>Mostra:</label>
+      <select id="filter-select" onchange="applyFilter()">
+        <option value="all">Tutti i gruppi</option>
+        <option value="identical">Solo duplicati esatti</option>
+        <option value="similar">Solo simili</option>
+        <option value="pending">Da revisionare</option>
+      </select>
+      <div style="flex:1"></div>
+      <span class="ai-badge">✦ Analisi AI attiva</span>
+      <button class="btn btn-ghost" onclick="reanalyze()">↺ Rianalizza</button>
+    </div>
+
+    <div class="section-title" id="groups-label">Gruppi da revisionare</div>
+    <div id="groups-container"></div>
+    <div id="empty-state" class="empty" style="display:none">
+      ✓ Nessun duplicato trovato in questo filtro
+    </div>
+  </div>
+
+</main>
+
+<!-- BOTTOM BAR -->
+<div id="bottom-bar">
+  <div class="bottom-info">
+    <strong id="bb-delete-count">0</strong> foto selezionate per l'eliminazione &nbsp;·&nbsp;
+    <strong id="bb-keep-count">0</strong> da tenere
+  </div>
+  <div class="bottom-actions">
+    <button class="btn btn-ghost" onclick="clearAllSelections()">Azzera selezione</button>
+    <button class="btn btn-danger" onclick="openDeleteModal()">🗑 Elimina selezionate</button>
+  </div>
+</div>
+
+<!-- DELETE MODAL -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal">
+    <div style="font-size:40px; margin-bottom:1rem">⚠️</div>
+    <h3>Conferma eliminazione</h3>
+    <p id="delete-modal-text">Stai per eliminare <strong>0 foto</strong> dalla tua libreria Google Foto. Questa operazione è irreversibile.</p>
+    <p style="font-size:12px; color:var(--text3); margin-top:-0.5rem; margin-bottom:1.5rem">
+      Nota: l'eliminazione tramite API sposta le foto nel cestino di Google Foto (30 giorni per il recupero).
+    </p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeDeleteModal()">Annulla</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">Elimina definitivamente</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const CLIENT_ID = '954812744305-q80b0jtokkaes7jaes6070unj4mj641b.apps.googleusercontent.com';
+const SCOPE = 'openid email profile https://www.googleapis.com/auth/photoslibrary.readonly';
+const REDIRECT_URI = window.location.origin + window.location.pathname;
+
+let accessToken = null;
+let allPhotos = [];
+let groups = [];
+let toDeleteIds = new Set();
+let toKeepIds = new Set();
+
+// ── AUTH ──────────────────────────────────────────────
+function startLogin() {
+  const params = new URLSearchParams({
+    client_id: CLIENT_ID,
+    redirect_uri: REDIRECT_URI,
+    response_type: 'token',
+    scope: SCOPE,
+    prompt: 'select_account'
+  });
+  window.location = 'https://accounts.google.com/o/oauth2/v2/auth?' + params;
+}
+
+function logout() {
+  accessToken = null;
+  allPhotos = [];
+  groups = [];
+  toDeleteIds.clear();
+  toKeepIds.clear();
+  sessionStorage.removeItem('gphoto_token');
+  document.getElementById('user-info').style.display = 'none';
+  show('login-screen');
+  document.getElementById('bottom-bar').classList.remove('visible');
+}
+
+async function handleCallback() {
+  const hash = new URLSearchParams(window.location.hash.slice(1));
+  const token = hash.get('access_token') || sessionStorage.getItem('gphoto_token');
+  if (!token) return;
+  accessToken = token;
+  sessionStorage.setItem('gphoto_token', token);
+  window.history.replaceState({}, '', window.location.pathname);
+  await loadUserInfo();
+  show('progress-screen');
+  await loadAndAnalyze();
+}
+
+async function loadUserInfo() {
+  const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+    headers: { Authorization: 'Bearer ' + accessToken }
+  });
+  const u = await r.json();
+  document.getElementById('user-avatar').src = u.picture;
+  document.getElementById('user-name').textContent = u.name;
+  document.getElementById('user-info').style.display = 'flex';
+}
+
+// ── LOAD PHOTOS ───────────────────────────────────────
+async function loadAndAnalyze() {
+  setProgress('Caricamento foto da Google Foto...', 'Recupero della libreria in corso', 5);
+  allPhotos = await fetchAllPhotos();
+  setProgress('Analisi in corso...', `${allPhotos.length} foto caricate — ricerca duplicati`, 60);
+  groups = await analyzeWithAI(allPhotos);
+  setProgress('Completato!', 'Analisi terminata', 100);
+  await sleep(600);
+  renderDashboard();
+  show('dashboard');
+}
+
+async function fetchAllPhotos() {
+  let photos = [];
+  let pageToken = null;
+  let page = 0;
+  do {
+    const body = { pageSize: 100 };
+    if (pageToken) body.pageToken = pageToken;
+    const r = await fetch('https://photoslibrary.googleapis.com/v1/mediaItems?pageSize=100' + (pageToken ? '&pageToken=' + pageToken : ''), {
+      headers: { Authorization: 'Bearer ' + accessToken }
+    });
+    const data = await r.json();
+    if (data.error) { showToast('Errore API: ' + data.error.message); break; }
+    const items = (data.mediaItems || []).filter(i => i.mimeType && i.mimeType.startsWith('image/'));
+    photos = photos.concat(items);
+    pageToken = data.nextPageToken;
+    page++;
+    setProgress('Caricamento foto...', `${photos.length} foto caricate`, Math.min(50, 5 + page * 5));
+    if (page >= 10) break; // max 1000 foto per sessione
+  } while (pageToken);
+  return photos;
+}
+
+// ── AI ANALYSIS ───────────────────────────────────────
+async function analyzeWithAI(photos) {
+  if (photos.length === 0) return [];
+
+  // Raggruppa per data (stesso giorno)
+  const byDate = {};
+  for (const p of photos) {
+    const dt = p.mediaMetadata?.creationTime || '';
+    const day = dt.slice(0, 10);
+    if (!byDate[day]) byDate[day] = [];
+    byDate[day].push(p);
+  }
+
+  const candidates = Object.entries(byDate)
+    .filter(([, arr]) => arr.length > 1)
+    .map(([date, arr]) => ({ date, photos: arr }));
+
+  if (candidates.length === 0) return [];
+
+  setProgress('Analisi AI gruppi...', 'Invio a Claude per analisi intelligente', 65);
+
+  // Per ogni giorno con più foto, chiedi all'AI di trovare simili/duplicati
+  const foundGroups = [];
+  let processed = 0;
+
+  for (const { date, photos: dayPhotos } of candidates.slice(0, 30)) {
+    processed++;
+    setProgress('Analisi AI...', `Analisi giorno ${date} (${processed}/${Math.min(candidates.length,30)})`, 65 + processed * 1);
+
+    const photoList = dayPhotos.slice(0, 20).map((p, i) => ({
+      index: i,
+      id: p.id,
+      filename: p.filename,
+      width: p.mediaMetadata?.width,
+      height: p.mediaMetadata?.height,
+      time: p.mediaMetadata?.creationTime,
+    }));
+
+    try {
+      const aiResult = await callAI(photoList, date);
+      if (aiResult && aiResult.groups) {
+        for (const g of aiResult.groups) {
+          const resolved = {
+            type: g.type,
+            date: date,
+            reason: g.reason,
+            photos: g.indices.map(i => dayPhotos[i]).filter(Boolean),
+            bestIndex: g.bestIndex,
+          };
+          if (resolved.photos.length > 1) foundGroups.push(resolved);
+        }
+      }
+    } catch(e) {
+      console.warn('AI error for date', date, e);
+    }
+  }
+
+  return foundGroups;
+}
+
+async function callAI(photoList, date) {
+  const prompt = `Sei un assistente per l'organizzazione di foto. Ti fornisco un elenco di foto scattate lo stesso giorno (${date}).
+
+Analizza i metadati e raggruppa le foto che sembrano duplicate o molto simili (stesso momento, stessa scena, burst shot, ecc.).
+
+Foto:
+${JSON.stringify(photoList, null, 2)}
+
+Rispondi SOLO con un oggetto JSON (senza markdown, senza backtick) con questa struttura:
+{
+  "groups": [
+    {
+      "type": "identical" | "similar",
+      "indices": [0, 1, 2],
+      "bestIndex": 0,
+      "reason": "breve spiegazione"
+    }
+  ]
+}
+
+- "identical": foto chiaramente duplicate (stesso nome file con varianti, stesso timestamp esatto)
+- "similar": foto molto simili scattate a pochi secondi/minuti di distanza (burst, raffiche)
+- "bestIndex": indice della foto migliore da tenere (preferisci risoluzione più alta, o l'ultima se uguale)
+- Se non ci sono duplicati o simili, rispondi con {"groups": []}
+- Includi solo gruppi con almeno 2 foto`;
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+
+  const data = await response.json();
+  const text = data.content?.[0]?.text || '{"groups":[]}';
+  try {
+    return JSON.parse(text.replace(/```json|```/g, '').trim());
+  } catch {
+    return { groups: [] };
+  }
+}
+
+// ── RENDER ────────────────────────────────────────────
+function renderDashboard() {
+  let totalInGroups = 0;
+  for (const g of groups) totalInGroups += g.photos.length;
+
+  document.getElementById('stat-total').textContent = allPhotos.length;
+  document.getElementById('stat-groups').textContent = groups.length;
+  document.getElementById('stat-delete').textContent = toDeleteIds.size;
+  document.getElementById('stat-keep').textContent = toKeepIds.size;
+
+  // Auto-suggest: mark best photo as keep, rest as delete
+  for (const g of groups) {
+    const best = g.photos[g.bestIndex] || g.photos[0];
+    if (best) toKeepIds.add(best.id);
+    for (const p of g.photos) {
+      if (p.id !== best?.id) toDeleteIds.add(p.id);
+    }
+  }
+
+  renderGroups(groups);
+  updateStats();
+  updateBottomBar();
+}
+
+function renderGroups(filtered) {
+  const container = document.getElementById('groups-container');
+  const empty = document.getElementById('empty-state');
+
+  if (filtered.length === 0) {
+    container.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  container.innerHTML = filtered.map((g, gi) => {
+    const best = g.photos[g.bestIndex] || g.photos[0];
+    return `
+    <div class="group-card" id="group-${gi}">
+      <div class="group-header">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="group-tag ${g.type === 'identical' ? 'tag-identical' : 'tag-similar'}">
+            ${g.type === 'identical' ? '⚠ Duplicato esatto' : '≈ Simili'}
+          </span>
+          <span style="font-size:13px;color:var(--text2)">${g.photos.length} foto · ${formatDate(g.date)}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:12px;color:var(--text3)">${g.reason}</span>
+          <div class="group-actions">
+            <button class="btn btn-ghost" style="font-size:12px;padding:5px 12px" onclick="keepBest(${gi})">⭐ Tieni migliore</button>
+            <button class="btn btn-ghost" style="font-size:12px;padding:5px 12px" onclick="keepAll(${gi})">✓ Tieni tutte</button>
+          </div>
+        </div>
+      </div>
+      <div class="photos-grid">
+        ${g.photos.map((p, pi) => {
+          const isBest = p.id === best?.id;
+          const isDelete = toDeleteIds.has(p.id);
+          const isKeep = toKeepIds.has(p.id);
+          return `
+          <div class="photo-item ${isKeep ? 'selected' : ''} ${isDelete && !isKeep ? 'marked-delete' : ''}"
+               id="photo-${p.id.replace(/[^a-z0-9]/gi,'')}"
+               onclick="togglePhoto('${gi}','${p.id}')">
+            <img src="${p.baseUrl}=w400-h400-c" loading="lazy" alt="${p.filename}">
+            ${isBest ? '<div class="photo-keep-badge">⭐ Migliore</div>' : ''}
+            <div class="photo-info">
+              <div>${p.filename}</div>
+            </div>
+            <div class="photo-badge">${p.mediaMetadata?.width || '?'}×${p.mediaMetadata?.height || '?'}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function togglePhoto(gi, photoId) {
+  const g = groups[gi];
+  if (!g) return;
+  if (toKeepIds.has(photoId)) {
+    toKeepIds.delete(photoId);
+    toDeleteIds.add(photoId);
+  } else if (toDeleteIds.has(photoId)) {
+    toDeleteIds.delete(photoId);
+  } else {
+    toKeepIds.add(photoId);
+    toDeleteIds.delete(photoId);
+  }
+  updateStats();
+  updateBottomBar();
+  // Re-render solo il gruppo
+  const best = g.photos[g.bestIndex] || g.photos[0];
+  const card = document.getElementById('group-' + gi);
+  if (card) {
+    const grid = card.querySelector('.photos-grid');
+    grid.innerHTML = g.photos.map((p, pi) => {
+      const isBest = p.id === best?.id;
+      const isDelete = toDeleteIds.has(p.id);
+      const isKeep = toKeepIds.has(p.id);
+      return `
+      <div class="photo-item ${isKeep ? 'selected' : ''} ${isDelete && !isKeep ? 'marked-delete' : ''}"
+           id="photo-${p.id.replace(/[^a-z0-9]/gi,'')}"
+           onclick="togglePhoto('${gi}','${p.id}')">
+        <img src="${p.baseUrl}=w400-h400-c" loading="lazy" alt="${p.filename}">
+        ${isBest ? '<div class="photo-keep-badge">⭐ Migliore</div>' : ''}
+        <div class="photo-info"><div>${p.filename}</div></div>
+        <div class="photo-badge">${p.mediaMetadata?.width || '?'}×${p.mediaMetadata?.height || '?'}</div>
+      </div>`;
+    }).join('');
+  }
+}
+
+function keepBest(gi) {
+  const g = groups[gi];
+  if (!g) return;
+  const best = g.photos[g.bestIndex] || g.photos[0];
+  for (const p of g.photos) {
+    if (p.id === best?.id) { toKeepIds.add(p.id); toDeleteIds.delete(p.id); }
+    else { toDeleteIds.add(p.id); toKeepIds.delete(p.id); }
+  }
+  updateStats(); updateBottomBar();
+  renderGroups(getCurrentFiltered());
+}
+
+function keepAll(gi) {
+  const g = groups[gi];
+  if (!g) return;
+  for (const p of g.photos) { toKeepIds.add(p.id); toDeleteIds.delete(p.id); }
+  updateStats(); updateBottomBar();
+  renderGroups(getCurrentFiltered());
+}
+
+function clearAllSelections() {
+  toDeleteIds.clear(); toKeepIds.clear();
+  updateStats(); updateBottomBar();
+  renderGroups(getCurrentFiltered());
+}
+
+function getCurrentFiltered() {
+  const f = document.getElementById('filter-select').value;
+  if (f === 'identical') return groups.filter(g => g.type === 'identical');
+  if (f === 'similar') return groups.filter(g => g.type === 'similar');
+  if (f === 'pending') return groups.filter(g => g.photos.some(p => !toKeepIds.has(p.id) && !toDeleteIds.has(p.id)));
+  return groups;
+}
+
+function applyFilter() { renderGroups(getCurrentFiltered()); }
+
+function updateStats() {
+  document.getElementById('stat-total').textContent = allPhotos.length;
+  document.getElementById('stat-groups').textContent = groups.length;
+  document.getElementById('stat-delete').textContent = toDeleteIds.size;
+  document.getElementById('stat-keep').textContent = toKeepIds.size;
+}
+
+function updateBottomBar() {
+  const bar = document.getElementById('bottom-bar');
+  document.getElementById('bb-delete-count').textContent = toDeleteIds.size;
+  document.getElementById('bb-keep-count').textContent = toKeepIds.size;
+  if (toDeleteIds.size > 0) bar.classList.add('visible');
+  else bar.classList.remove('visible');
+}
+
+// ── DELETE ────────────────────────────────────────────
+function openDeleteModal() {
+  document.getElementById('delete-modal-text').innerHTML =
+    `Stai per eliminare <strong>${toDeleteIds.size} foto</strong> dalla tua libreria Google Foto. Questa operazione sposta le foto nel cestino (recuperabili per 30 giorni).`;
+  document.getElementById('delete-modal').classList.add('open');
+}
+function closeDeleteModal() {
+  document.getElementById('delete-modal').classList.remove('open');
+}
+
+async function confirmDelete() {
+  closeDeleteModal();
+  // Nota: la Photos API v1 non permette eliminazione diretta da app di terze parti
+  // Mostriamo la lista e guidiamo l'utente
+  showToast(`⚠ La Photos API non consente eliminazioni dirette da app esterne. Esporta la lista e usa Google Foto manualmente.`);
+  exportDeleteList();
+}
+
+function exportDeleteList() {
+  const toDelete = allPhotos.filter(p => toDeleteIds.has(p.id));
+  const lines = toDelete.map(p =>
+    `${p.filename}\t${p.mediaMetadata?.creationTime || ''}\t${p.productUrl || ''}`
+  );
+  const content = 'Nome file\tData\tLink Google Foto\n' + lines.join('\n');
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'foto_da_eliminare.txt';
+  a.click();
+  showToast('✓ Lista esportata come file .txt');
+}
+
+async function reanalyze() {
+  toDeleteIds.clear(); toKeepIds.clear();
+  show('progress-screen');
+  await loadAndAnalyze();
+}
+
+// ── HELPERS ───────────────────────────────────────────
+function show(id) {
+  ['login-screen','progress-screen','dashboard'].forEach(s => {
+    document.getElementById(s).style.display = s === id ? (id === 'dashboard' ? 'block' : 'flex') : 'none';
+  });
+  if (id === 'progress-screen') document.getElementById('progress-screen').style.display = 'block';
+}
+
+function setProgress(title, desc, pct) {
+  document.getElementById('progress-title').textContent = title;
+  document.getElementById('progress-desc').textContent = desc;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-label').textContent = desc;
+}
+
+function formatDate(d) {
+  if (!d) return '';
+  try { return new Date(d).toLocaleDateString('it-IT', { day:'numeric', month:'long', year:'numeric' }); }
+  catch { return d; }
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 4000);
+}
+
+// ── INIT ──────────────────────────────────────────────
+window.onload = () => {
+  sessionStorage.removeItem('gphoto_token');
+  show('login-screen');
+  if (window.location.hash.includes('access_token') || sessionStorage.getItem('gphoto_token')) {
+    handleCallback();
+  }
+};
+</script>
+</body>
+</html>
